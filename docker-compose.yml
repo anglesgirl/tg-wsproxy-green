@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  douyin_tiktok_download_api:
+    image: evil0ctal/douyin_tiktok_download_api:latest
+    container_name: douyin_tiktok_download_api
+    restart: always
+    ports:
+      - "80:80"          # 左边改成你服务器想用的端口,如 8000:80
+    volumes:
+      - ./douyin_web_config.yaml:/app/crawlers/douyin/web/config.yaml
+      - ./tiktok_web_config.yaml:/app/crawlers/tiktok/web/config.yaml
+      - ./tiktok_app_config.yaml:/app/crawlers/tiktok/app/config.yaml
+    environment:
+      TZ: Asia/Shanghai
