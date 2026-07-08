@@ -1,0 +1,16 @@
+# Binaries
+*.exe
+*.zip
+*.7z
+*.rar
+
+# Keep directory structure
+!/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Uploads
+.uploads/
