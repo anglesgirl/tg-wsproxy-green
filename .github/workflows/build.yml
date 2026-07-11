@@ -1,0 +1,57 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build
+        run: |
+          cd launcher
+          go build -ldflags="-H windowsgui -s -w" -o "../启动Telegram.exe" main.go
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 启动Telegram
+          path: 启动Telegram.exe
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2
+          name: 启动器 v2（tg://proxy 自动配置）
+          body: |
+            ## v2 - tg://proxy 自动配置方案
+
+            ### 下载
+            下载 `启动Telegram.exe`，放入 `TG-绿色版` 目录（和 `Telegram/`、`wsproxy/` 同级）。
+
+            ### 使用
+            1. 确保已下载 `TgWsProxy.exe` 放入 `wsproxy/` 目录
+            2. 双击 `启动Telegram.exe`
+            3. 首次运行 Telegram 弹出"启用代理"，点"启用"
+            4. 之后双击直接用，代理自动连接
+
+            ### 与 v1 的区别
+            - 不再强制显示代理窗口
+            - 用 `tg://proxy` 深度链接自动配置 Telegram
+            - 代理静默在托盘运行
+          files: 启动Telegram.exe
+          prerelease: false
