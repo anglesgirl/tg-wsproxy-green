@@ -3,6 +3,8 @@ name: Build
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - "**.md"
   workflow_dispatch:
 
 permissions:
@@ -21,37 +23,63 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Build
+      - name: Build launcher
         run: |
           cd launcher
-          go build -ldflags="-H windowsgui -s -w" -o "../启动Telegram.exe" main.go
+          go build -ldflags="-H windowsgui -s -w" -o "../TG-绿色版/启动Telegram.exe" main.go
+
+      - name: Download TgWsProxy
+        run: |
+          mkdir -p TG-绿色版/wsproxy
+          curl -L -o "TG-绿色版/wsproxy/TgWsProxy.exe" `
+            "https://github.com/Flowseal/tg-ws-proxy/releases/download/v1.8.1/TgWsProxy_windows.exe"
+
+      - name: Download Telegram Portable
+        run: |
+          mkdir -p TG-绿色版/Telegram
+          curl -L -o tsetup.zip `
+            "https://telegram.org/dl/desktop/win"
+          Expand-Archive -Path tsetup.zip -DestinationPath . -Force
+          Copy-Item -Path "tsetup\Telegram.exe" -Destination "TG-绿色版/Telegram\Telegram.exe" -Force
+          Remove-Item -Recurse -Force tsetup, tsetup.zip
+
+      - name: Package zip
+        run: |
+          Compress-Archive -Path "TG-绿色版\*" -DestinationPath "TG-绿色版.zip" -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 启动Telegram
-          path: 启动Telegram.exe
+          name: TG-绿色版
+          path: TG-绿色版.zip
+
+      - name: Delete old release
+        run: |
+          gh release delete v2 --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v2
-          name: 启动器 v2（tg://proxy 自动配置）
+          name: TG绿色版 v2（tg://proxy 自动配置）
           body: |
             ## v2 - tg://proxy 自动配置方案
 
             ### 下载
-            下载 `启动Telegram.exe`，放入 `TG-绿色版` 目录（和 `Telegram/`、`wsproxy/` 同级）。
+            下载 `TG-绿色版.zip`，解压后双击 `启动Telegram.exe` 即可，无需其他操作。
 
             ### 使用
-            1. 确保已下载 `TgWsProxy.exe` 放入 `wsproxy/` 目录
+            1. 解压 zip
             2. 双击 `启动Telegram.exe`
             3. 首次运行 Telegram 弹出"启用代理"，点"启用"
             4. 之后双击直接用，代理自动连接
 
-            ### 与 v1 的区别
-            - 不再强制显示代理窗口
-            - 用 `tg://proxy` 深度链接自动配置 Telegram
-            - 代理静默在托盘运行
-          files: 启动Telegram.exe
+            ### 包含
+            - 启动Telegram.exe（Go 编译，自动配置代理）
+            - Telegram Desktop（官方便携版）
+            - TgWsProxy.exe（v1.8.1，已内置）
+            - 使用说明.md
+          files: TG-绿色版.zip
           prerelease: false
